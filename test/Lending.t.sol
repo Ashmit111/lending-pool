@@ -10,7 +10,7 @@ contract MockERC20 {
     mapping(address => mapping(address => uint256)) public allowance;
     uint8 public decimals = 18;
 
-    string public name = "MOck Token";
+    string public name = "Mock Token";
     string public symbol = "MOCK";
 
     function mint(address to, uint256 amount) external {
@@ -50,6 +50,7 @@ contract TestLendingPool is Test {
     LendingPool public lendingpool;
     PriceOracle public priceOracle;
     MockERC20 public mockToken;
+    MockERC20 public mockToken2;
 
     address public owner = address(1);
     address public user1 = address(2);
@@ -60,6 +61,7 @@ contract TestLendingPool is Test {
         priceOracle = new PriceOracle();
         lendingpool = new LendingPool(address(priceOracle));
         mockToken = new MockERC20();
+        mockToken2 = new MockERC20();
 
         mockToken.mint(user1, 1000 ether);
         mockToken.mint(user2, 1000 ether);
@@ -149,5 +151,28 @@ contract TestLendingPool is Test {
             )
         );
         lendingpool.withdraw(address(mockToken), 100 ether);
+    }
+
+    // Test 8 : Borrow Test
+    function testBorrorWithSufficientCollateral() public {
+        vm.prank(owner);
+        lendingpool.addSupportedToken(address(mockToken), 7500);
+        vm.prank(owner);
+        lendingpool.addSupportedToken(address(mockToken2), 8000);
+
+        vm.prank(user1);
+        mockToken.approve(address(lendingpool), 100 ether);
+        vm.prank(user1);
+        lendingpool.deposit(address(mockToken), 100 ether);
+
+        vm.prank(user2);
+        mockToken2.approve(address(lendingpool), 1000 ether);
+        vm.prank(user2);
+        lendingpool.deposit(address(mockToken2), 1000 ether);
+
+        uint256 borrowAmount = 800 ether;
+
+        vm.prank(user1);
+        lendingpool.borrow(address(mockToken2), borrowAmount);
     }
 }
