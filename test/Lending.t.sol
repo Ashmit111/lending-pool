@@ -174,5 +174,8 @@ contract TestLendingPool is Test {
 
         vm.prank(user1);
         lendingpool.borrow(address(mockToken2), borrowAmount);
+
+        assertEq(lendingpool.borrows(user1, address(mockToken2)), borrowAmount);
+        assertEq(mockToken2.balanceOf(user1), borrowAmount);
     }
 }
