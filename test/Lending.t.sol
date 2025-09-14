@@ -65,7 +65,6 @@ contract TestLendingPool is Test {
 
         mockToken.mint(user1, 1000 ether);
         mockToken.mint(user2, 1000 ether);
-        
     }
 
     // Test 1: Only owner can add supported token
@@ -177,5 +176,33 @@ contract TestLendingPool is Test {
 
         assertEq(lendingpool.borrows(user1, address(mockToken2)), borrowAmount);
         assertEq(mockToken2.balanceOf(user1), borrowAmount);
+    }
+
+    function testBorrowInsufficientCollateral() public {
+        vm.prank(owner);
+        lendingpool.addSupportedToken(address(mockToken), 7500);
+        vm.prank(owner);
+        lendingpool.addSupportedToken(address(mockToken2), 8000);
+
+        vm.prank(user1);
+        mockToken.approve(address(lendingpool), 100 ether);
+        vm.prank(user1);
+        lendingpool.deposit(address(mockToken), 100 ether);
+
+        // User2 deposits only 1000 ether of mockToken2
+        vm.prank(user2);
+        lendingpool.deposit(address(mockToken2), 1000 ether);
+        // But trying to borrow 150,000 ether
+        uint256 borrowAmount = 150000 ether;
+
+        vm.prank(user1);
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                LendingPool.InsufficientCollateral.selector,
+                150000 ether,
+                750 ether
+            )
+        );
+        lendingpool.borrow(address(mockToken2), borrowAmount);
     }
 }
