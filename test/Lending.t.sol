@@ -205,4 +205,79 @@ contract TestLendingPool is Test {
         );
         lendingpool.borrow(address(mockToken2), borrowAmount);
     }
+
+    function testRepay() public {
+        vm.prank(owner);
+        lendingpool.addSupportedToken(address(mockToken), 7500);
+        vm.prank(owner);
+        lendingpool.addSupportedToken(address(mockToken2), 8000);
+
+        vm.prank(user1);
+        mockToken.approve(address(lendingpool), 100 ether);
+        vm.prank(user1);
+        lendingpool.deposit(address(mockToken), 100 ether);
+
+        vm.prank(user2);
+        mockToken.approve(address(lendingpool), 1000 ether);
+        vm.prank(user2);
+        lendingpool.deposit(address(mockToken), 1000 ether);
+
+        uint256 borrowAmount = 500 ether;
+        vm.prank(user1);
+        lendingpool.borrow(address(mockToken2), borrowAmount);
+        assertEq(lendingpool.borrows(user1, address(mockToken2)), borrowAmount);
+        assertEq(mockToken2.balanceOf(user1), borrowAmount);
+
+        // Now repay
+        vm.prank(user1);
+        mockToken2.approve(address(lendingpool), 200 ether);
+        vm.prank(user1);
+        lendingpool.repay(address(mockToken2), 200 ether);  
+        assertEq(lendingpool.borrows(user1, address(mockToken2)), 300 ether);
+        assertEq(mockToken2.balanceOf(user1), 300 ether);
+
+        // Repay remaining
+        vm.prank(user1);
+        mockToken2.approve(address(lendingpool), 300 ether);
+        vm.prank(user1);
+        lendingpool.repay(address(mockToken2), 300 ether);
+        assertEq(lendingpool.borrows(user1, address(mockToken2)), 0);
+        assertEq(mockToken2.balanceOf(user1), 0);
+    }
+
+    function testRepayExceedsBorrowed() public {
+        vm.prank(owner);
+        lendingpool.addSupportedToken(address(mockToken), 7500);
+        vm.prank(owner);
+        lendingpool.addSupportedToken(address(mockToken2), 8000);
+
+        vm.prank(user1);
+        mockToken.approve(address(lendingpool), 100 ether);
+        vm.prank(user1);
+        lendingpool.deposit(address(mockToken), 100 ether);
+
+        vm.prank(user2);
+        mockToken.approve(address(lendingpool), 1000 ether);
+        vm.prank(user2);
+        lendingpool.deposit(address(mockToken), 1000 ether);
+
+        uint256 borrowAmount = 500 ether;
+        vm.prank(user1);
+        lendingpool.borrow(address(mockToken2), borrowAmount);
+        assertEq(lendingpool.borrows(user1, address(mockToken2)), borrowAmount);
+        assertEq(mockToken2.balanceOf(user1), borrowAmount);
+
+        // Now repay more than borrowed
+        vm.prank(user1);
+        mockToken2.approve(address(lendingpool), 600 ether);
+        vm.prank(user1);
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                LendingPool.RepayAmountExceedsBorrowed.selector,
+                600 ether,
+                500 ether
+            )
+        );
+        lendingpool.repay(address(mockToken2), 600 ether);  
+    }
 }
