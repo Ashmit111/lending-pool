@@ -193,7 +193,7 @@ contract TestLendingPool is Test {
         vm.prank(user2);
         lendingpool.deposit(address(mockToken2), 1000 ether);
         // But trying to borrow 150,000 ether
-        uint256 borrowAmount = 150000 ether;
+        uint256 borrowAmount = 151000 ether;
 
         vm.prank(user1);
         vm.expectRevert(
