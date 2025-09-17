@@ -59,18 +59,21 @@ contract TestLendingPool is Test {
     function setUp() public {
         // Deploy contracts (this runs before each test)
         priceOracle = new PriceOracle();
+        
+        vm.prank(owner);
         lendingpool = new LendingPool(address(priceOracle));
         mockToken = new MockERC20();
         mockToken2 = new MockERC20();
 
         mockToken.mint(user1, 1000 ether);
         mockToken.mint(user2, 1000 ether);
+
+        mockToken2.mint(user1, 1000 ether);
     }
 
     // Test 1: Only owner can add supported token
     function testAddSupportedTokenByOwner() public {
         vm.prank(owner);
-
         lendingpool.addSupportedToken(address(mockToken), 7500);
 
         assertTrue(lendingpool.supportedTokens(address(mockToken)));
@@ -86,7 +89,7 @@ contract TestLendingPool is Test {
 
     // Test 3: Deposit into supported token
     function testDeposit() public {
-        vm.prank(address(this));
+        vm.prank(owner);
         lendingpool.addSupportedToken(address(mockToken), 7500);
 
         uint256 depositAmount = 100 ether;
@@ -114,17 +117,17 @@ contract TestLendingPool is Test {
         mockToken.approve(address(lendingpool), depositAmount);
 
         vm.prank(user1);
-        vm.expectRevert(LendingPool.TokenNotSupported.selector);
+        vm.expectRevert(abi.encodeWithSelector(LendingPool.TokenNotSupported.selector, address(mockToken)));
         lendingpool.deposit(address(mockToken), depositAmount);
     }
 
     // Test 6: Withdraw test
-    function testWithdraw() public {
+    function testWithdraws() public {
         // Setup: Add token and deposit first
-        vm.prank(address(this));
+        vm.prank(owner);
         lendingpool.addSupportedToken(address(mockToken), 7500);
 
-        uint256 depositAmount = 100 ether;
+        uint256 depositAmount = 1000 ether;
         vm.prank(user1);
         mockToken.approve(address(lendingpool), depositAmount);
         vm.prank(user1);
@@ -183,7 +186,7 @@ contract TestLendingPool is Test {
         lendingpool.addSupportedToken(address(mockToken), 7500);
         vm.prank(owner);
         lendingpool.addSupportedToken(address(mockToken2), 8000);
-
+    
         vm.prank(user1);
         mockToken.approve(address(lendingpool), 100 ether);
         vm.prank(user1);
