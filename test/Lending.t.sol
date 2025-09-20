@@ -87,6 +87,7 @@ contract TestLendingPool is Test {
         mockToken.mint(user2, 1000 ether);
 
         mockToken2.mint(user1, 1000 ether);
+        mockToken2.mint(user2, 1000 ether);
     }
 
     // Test 1: Only owner can add supported token
@@ -181,22 +182,24 @@ contract TestLendingPool is Test {
         lendingpool.addSupportedToken(address(mockToken2), 8000);
 
         vm.prank(user1);
-        mockToken.approve(address(lendingpool), 100 ether);
+        mockToken.approve(address(lendingpool), 1000 ether);
         vm.prank(user1);
-        lendingpool.deposit(address(mockToken), 100 ether);
+        lendingpool.deposit(address(mockToken), 1000 ether);
+        mockToken.balanceOf(user1); // 1000 ether left
 
         vm.prank(user2);
         mockToken2.approve(address(lendingpool), 1000 ether);
         vm.prank(user2);
         lendingpool.deposit(address(mockToken2), 1000 ether);
 
-        uint256 borrowAmount = 800 ether;
+        uint256 borrowAmount = 750 ether;
+        uint256 initialBalance = mockToken2.balanceOf(user1);
 
         vm.prank(user1);
         lendingpool.borrow(address(mockToken2), borrowAmount);
 
         assertEq(lendingpool.borrows(user1, address(mockToken2)), borrowAmount);
-        assertEq(mockToken2.balanceOf(user1), borrowAmount);
+        assertEq(mockToken2.balanceOf(user1), initialBalance + borrowAmount);
     }
 
     function testBorrowInsufficientCollateral() public {
