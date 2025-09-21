@@ -8,3 +8,14 @@ remappings = [
 ]
 
 # See more config options https://github.com/foundry-rs/foundry/blob/master/crates/config/README.md#all-options
+
+[rpc_endpoints]
+anvil = "http://127.0.0.1:8545"
+sepolia = "https://rpc.sepolia.org"
+mainnet = "https://eth.llamarpc.com"
+
+[etherscan]
+sepolia = { key = "" }
+mainnet = { key = "" }
+
+
